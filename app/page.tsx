@@ -77,12 +77,13 @@ interface CustomDeviceOrientationEvent extends DeviceOrientationEvent {
 }
 
 // --- GEMINI API HELPER ---
-const apiKey = ""; // API key will be injected by the environment
+// ⚠️ PERINGATAN: API key hardcoded tidak aman untuk produksi. Gantilah dengan environment variable.
 
 const callGeminiAPI = async (prompt: string): Promise<string> => {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-  const maxRetries = 5;
-  
+  // Gunakan model yang stabil
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const maxRetries = 3;
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(url, {
@@ -92,8 +93,13 @@ const callGeminiAPI = async (prompt: string): Promise<string> => {
           contents: [{ parts: [{ text: prompt }] }]
         })
       });
-      
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Gemini API error:", errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, AI tidak dapat memberikan respons saat ini.";
     } catch (error) {
@@ -965,7 +971,7 @@ function DoaView() {
     setIsCurhatLoading(true);
     setAiResponse('');
     
-    const prompt = `Saya adalah seorang muslim yang menggunakan aplikasi Qur&apos;an. Saat ini saya merasa: "${curhatInput}". Berikan nasihat Islami yang sangat singkat (1 paragraf) untuk menenangkan saya, dan rekomendasikan satu doa dari Al-Qur&apos;an atau Sunnah yang cocok untuk situasi saya beserta artinya. Jadikan bahasanya hangat, empatik, dan menyejukkan hati.`;
+    const prompt = `Saya adalah seorang muslim yang menggunakan aplikasi Qur'an. Saat ini saya merasa: "${curhatInput}". Berikan nasihat Islami yang sangat singkat (1 paragraf) untuk menenangkan saya, dan rekomendasikan satu doa dari Al-Qur'an atau Sunnah yang cocok untuk situasi saya beserta artinya. Jadikan bahasanya hangat, empatik, dan menyejukkan hati.`;
     
     const response = await callGeminiAPI(prompt);
     setAiResponse(response);
