@@ -79,41 +79,24 @@ interface CustomDeviceOrientationEvent extends DeviceOrientationEvent {
 const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 
 const callGeminiAPI = async (prompt: string): Promise<string> => {
-  if (!GEMINI_API_KEY) {
-    console.error("Gemini API key tidak ditemukan. Pastikan NEXT_PUBLIC_GEMINI_API_KEY sudah diset.");
-    return "⚠️ API key tidak tersedia. Silakan hubungi pengembang.";
-  }
+  try {
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-  const maxRetries = 3;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Gemini API error:", errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, AI tidak dapat memberikan respons saat ini.";
-    } catch (error) {
-      if (i === maxRetries - 1) {
-        console.error("Gemini API Error after retries:", error);
-        return "Gagal terhubung ke AI. Silakan periksa koneksi internet Anda dan coba lagi.";
-      }
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error?.message || 'Gagal memanggil AI');
     }
+
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, AI tidak dapat memberikan respons.";
+  } catch (error) {
+    console.error('Error calling Gemini API:', error);
+    return "Gagal terhubung ke AI. Silakan coba lagi nanti.";
   }
-  return "Terjadi kesalahan yang tidak terduga.";
 };
 
 // --- CUSTOM HOOKS ---
