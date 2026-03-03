@@ -76,11 +76,14 @@ interface CustomDeviceOrientationEvent extends DeviceOrientationEvent {
   requestPermission?: () => Promise<string>;
 }
 
-// --- GEMINI API HELPER ---
-// ⚠️ PERINGATAN: API key hardcoded tidak aman untuk produksi. Gantilah dengan environment variable.
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 
 const callGeminiAPI = async (prompt: string): Promise<string> => {
-  // Gunakan model yang stabil
+  if (!GEMINI_API_KEY) {
+    console.error("Gemini API key tidak ditemukan. Pastikan NEXT_PUBLIC_GEMINI_API_KEY sudah diset.");
+    return "⚠️ API key tidak tersedia. Silakan hubungi pengembang.";
+  }
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const maxRetries = 3;
 
